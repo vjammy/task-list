@@ -3,18 +3,33 @@
 import { getDb } from '@/db';
 import { revalidatePath } from 'next/cache';
 
+const VALID_STATUSES = ['pending', 'in_progress', 'completed'];
+const VALID_PRIORITIES = ['low', 'medium', 'high'];
+
 export async function createTask(formData: FormData) {
   try {
-    const sql = getDb();
     const title = formData.get('title') as string;
-    const description = (formData.get('description') as string) || '';
+    if (!title || !title.trim()) {
+      return { error: 'Title is required.' };
+    }
+
     const priority = (formData.get('priority') as string) || 'medium';
+    if (!VALID_PRIORITIES.includes(priority)) {
+      return { error: 'Invalid priority value.' };
+    }
+
     const categoryId = formData.get('category_id') as string;
+    if (categoryId && isNaN(Number(categoryId))) {
+      return { error: 'Invalid category ID.' };
+    }
+
+    const sql = getDb();
+    const description = (formData.get('description') as string) || '';
     const dueDate = formData.get('due_date') as string;
 
     await sql`
       INSERT INTO tasks (title, description, priority, category_id, due_date)
-      VALUES (${title}, ${description}, ${priority},
+      VALUES (${title.trim()}, ${description}, ${priority},
               ${categoryId ? Number(categoryId) : null},
               ${dueDate || null})
     `;
@@ -28,6 +43,10 @@ export async function createTask(formData: FormData) {
 
 export async function updateTaskStatus(id: number, status: string) {
   try {
+    if (!VALID_STATUSES.includes(status)) {
+      return { error: 'Invalid status value.' };
+    }
+
     const sql = getDb();
     await sql`UPDATE tasks SET status = ${status} WHERE id = ${id}`;
     revalidatePath('/');
@@ -52,13 +71,25 @@ export async function deleteTask(id: number) {
 
 export async function updateTask(id: number, formData: FormData) {
   try {
-    const sql = getDb();
     const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
+    if (title !== null && !title.trim()) {
+      return { error: 'Title cannot be empty.' };
+    }
+
     const priority = formData.get('priority') as string;
+    if (priority && !VALID_PRIORITIES.includes(priority)) {
+      return { error: 'Invalid priority value.' };
+    }
+
+    const status = formData.get('status') as string;
+    if (status && !VALID_STATUSES.includes(status)) {
+      return { error: 'Invalid status value.' };
+    }
+
+    const sql = getDb();
+    const description = formData.get('description') as string;
     const categoryId = formData.get('category_id') as string;
     const dueDate = formData.get('due_date') as string;
-    const status = formData.get('status') as string;
 
     await sql`
       UPDATE tasks SET

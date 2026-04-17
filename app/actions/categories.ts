@@ -5,11 +5,15 @@ import { revalidatePath } from 'next/cache';
 
 export async function createCategory(formData: FormData) {
   try {
-    const sql = getDb();
     const name = formData.get('name') as string;
+    if (!name || !name.trim()) {
+      return { error: 'Category name is required.' };
+    }
+
+    const sql = getDb();
     const color = (formData.get('color') as string) || '#6B7280';
 
-    await sql`INSERT INTO categories (name, color) VALUES (${name}, ${color})`;
+    await sql`INSERT INTO categories (name, color) VALUES (${name.trim()}, ${color})`;
     revalidatePath('/');
     return { success: true };
   } catch (error) {
