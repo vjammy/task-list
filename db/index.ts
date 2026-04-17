@@ -1,5 +1,10 @@
 import { neon } from '@neondatabase/serverless';
 
+let _db: ReturnType<typeof neon> | null = null;
+
 export function getDb() {
-  return neon(process.env.DATABASE_URL!);
+  if (!_db) {
+    _db = neon(process.env.DATABASE_URL!);
+  }
+  return _db;
 }
