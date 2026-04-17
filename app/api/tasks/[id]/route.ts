@@ -1,6 +1,9 @@
 import { getDb } from '@/db';
 import { NextRequest, NextResponse } from 'next/server';
 
+const VALID_STATUSES = ['pending', 'in_progress', 'completed'];
+const VALID_PRIORITIES = ['low', 'medium', 'high'];
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -21,18 +24,35 @@ export async function PATCH(
   const sql = getDb();
   const body = await request.json();
 
+  if (body.status && !VALID_STATUSES.includes(body.status)) {
+    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+  }
+  if (body.priority && !VALID_PRIORITIES.includes(body.priority)) {
+    return NextResponse.json({ error: 'Invalid priority' }, { status: 400 });
+  }
+
+  // Fetch current task to build update with explicit values
+  const current = await sql`SELECT * FROM tasks WHERE id = ${Number(id)}`;
+  if (current.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  const title = body.title !== undefined ? body.title : current[0].title;
+  const description = body.description !== undefined ? body.description : current[0].description;
+  const status = body.status !== undefined ? body.status : current[0].status;
+  const priority = body.priority !== undefined ? body.priority : current[0].priority;
+  const categoryId = body.category_id !== undefined ? body.category_id : current[0].category_id;
+  const dueDate = body.due_date !== undefined ? body.due_date : current[0].due_date;
+
   const result = await sql`
     UPDATE tasks SET
-      title       = COALESCE(${body.title ?? null}, title),
-      description = COALESCE(${body.description ?? null}, description),
-      status      = COALESCE(${body.status ?? null}, status),
-      priority    = COALESCE(${body.priority ?? null}, priority),
-      category_id = COALESCE(${body.category_id !== undefined ? body.category_id : null}, category_id),
-      due_date    = COALESCE(${body.due_date ?? null}, due_date)
+      title       = ${title},
+      description = ${description},
+      status      = ${status},
+      priority    = ${priority},
+      category_id = ${categoryId},
+      due_date    = ${dueDate}
     WHERE id = ${Number(id)}
     RETURNING *
   `;
-  if (result.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(result[0]);
 }
 

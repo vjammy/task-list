@@ -1,6 +1,9 @@
 import { getDb } from '@/db';
 import { NextRequest, NextResponse } from 'next/server';
 
+const VALID_STATUSES = ['pending', 'in_progress', 'completed'];
+const VALID_PRIORITIES = ['low', 'medium', 'high'];
+
 export async function GET(request: NextRequest) {
   const sql = getDb();
   const { searchParams } = new URL(request.url);
@@ -33,10 +36,17 @@ export async function POST(request: NextRequest) {
   const sql = getDb();
   const body = await request.json();
 
+  if (!body.title || typeof body.title !== 'string' || !body.title.trim()) {
+    return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+  }
+
+  const status = body.status && VALID_STATUSES.includes(body.status) ? body.status : 'pending';
+  const priority = body.priority && VALID_PRIORITIES.includes(body.priority) ? body.priority : 'medium';
+
   const result = await sql`
     INSERT INTO tasks (title, description, status, priority, category_id, due_date)
-    VALUES (${body.title}, ${body.description ?? ''}, ${body.status ?? 'pending'},
-            ${body.priority ?? 'medium'}, ${body.category_id ?? null}, ${body.due_date ?? null})
+    VALUES (${body.title.trim()}, ${body.description ?? ''}, ${status},
+            ${priority}, ${body.category_id ?? null}, ${body.due_date ?? null})
     RETURNING *
   `;
   return NextResponse.json(result[0], { status: 201 });
