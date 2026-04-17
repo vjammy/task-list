@@ -1,36 +1,135 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Task List
+
+A full-featured task management application built with Next.js, Neon (PostgreSQL), and Tailwind CSS.
+
+## Features
+
+- **Task CRUD** — Create, read, update, and delete tasks with title, description, status, priority, category, and due date
+- **Status Workflow** — Cycle tasks through `pending` → `in_progress` → `completed`
+- **Priority Levels** — Assign `low`, `medium`, or `high` priority to tasks
+- **Category Management** — Organize tasks with color-coded categories (Work, Personal, Shopping, Health, Learning included by default)
+- **Search & Filter** — Full-text search across task titles and descriptions; filter by status, priority, and category
+- **Pagination** — Efficient browsing with 10 tasks per page
+- **Inline Editing** — Edit tasks directly in the UI without page navigation
+- **Toast Notifications** — Real-time feedback for all user actions
+- **Responsive Design** — Mobile-first layout using Tailwind CSS
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript 5 |
+| UI | React 19, Tailwind CSS 4 |
+| Database | Neon (Serverless PostgreSQL) |
+| Forms | Next.js Server Actions |
+
+## Prerequisites
+
+- **Node.js** 18.17 or later
+- **Neon account** — [sign up free](https://neon.tech)
+- **psql** (optional, for manual schema setup)
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone and install
+
+```bash
+git clone <repository-url>
+cd task-list
+npm install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set your Neon connection string:
+
+```
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+```
+
+### 3. Initialize the database
+
+Run the schema against your Neon database:
+
+```bash
+psql "postgresql://user:password@host/database?sslmode=require" -f db/schema.sql
+```
+
+Or paste the contents of `db/schema.sql` into the Neon SQL editor.
+
+### 4. Start the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+app/
+  actions/        # Server actions (mutations)
+  api/            # REST API routes
+  components/     # React UI components
+  layout.tsx      # Root layout
+  page.tsx        # Home page
+  globals.css     # Global styles
+db/
+  index.ts        # Neon client singleton
+  schema.sql      # Database schema + seed data
+```
 
-## Learn More
+## Database Schema
 
-To learn more about Next.js, take a look at the following resources:
+### `tasks`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Column | Type | Notes |
+|--------|------|-------|
+| id | SERIAL | Primary key |
+| title | VARCHAR(255) | Required |
+| description | TEXT | Optional |
+| status | VARCHAR(20) | `pending`, `in_progress`, or `completed` |
+| priority | VARCHAR(10) | `low`, `medium`, or `high` |
+| category_id | INTEGER | Foreign key → `categories.id` |
+| due_date | DATE | Optional |
+| created_at | TIMESTAMPTZ | Auto-set |
+| updated_at | TIMESTAMPTZ | Auto-updated via trigger |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### `categories`
 
-## Deploy on Vercel
+| Column | Type | Notes |
+|--------|------|-------|
+| id | SERIAL | Primary key |
+| name | VARCHAR(100) | Unique |
+| color | VARCHAR(7) | Hex color code |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API Endpoints
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/tasks` | List all tasks (supports query params) |
+| POST | `/api/tasks` | Create a task |
+| GET | `/api/tasks/[id]` | Get a task by ID |
+| PATCH | `/api/tasks/[id]` | Update a task |
+| DELETE | `/api/tasks/[id]` | Delete a task |
+| GET | `/api/categories` | List all categories |
+| POST | `/api/categories` | Create a category |
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
+
+## License
+
+Private — all rights reserved.
