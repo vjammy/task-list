@@ -71,25 +71,37 @@ export async function deleteTask(id: number) {
 
 export async function updateTask(id: number, formData: FormData) {
   try {
-    const title = formData.get('title') as string;
+    const sql = getDb();
+
+    // Fetch current values to avoid overwriting with null for missing fields
+    const current = await sql`SELECT * FROM tasks WHERE id = ${id}`;
+    if (current.length === 0) {
+      return { error: 'Task not found.' };
+    }
+
+    const rawTitle = formData.get('title');
+    const rawDescription = formData.get('description');
+    const rawPriority = formData.get('priority');
+    const rawStatus = formData.get('status');
+    const rawCategoryId = formData.get('category_id');
+    const rawDueDate = formData.get('due_date');
+
+    const title = rawTitle !== null ? (rawTitle as string) : current[0].title;
+    const description = rawDescription !== null ? (rawDescription as string) : current[0].description;
+    const priority = rawPriority !== null ? (rawPriority as string) : current[0].priority;
+    const status = rawStatus !== null ? (rawStatus as string) : current[0].status;
+    const categoryId = rawCategoryId !== null ? (rawCategoryId as string) : String(current[0].category_id ?? '');
+    const dueDate = rawDueDate !== null ? (rawDueDate as string) : (current[0].due_date ?? '');
+
     if (title !== null && !title.trim()) {
       return { error: 'Title cannot be empty.' };
     }
-
-    const priority = formData.get('priority') as string;
     if (priority && !VALID_PRIORITIES.includes(priority)) {
       return { error: 'Invalid priority value.' };
     }
-
-    const status = formData.get('status') as string;
     if (status && !VALID_STATUSES.includes(status)) {
       return { error: 'Invalid status value.' };
     }
-
-    const sql = getDb();
-    const description = formData.get('description') as string;
-    const categoryId = formData.get('category_id') as string;
-    const dueDate = formData.get('due_date') as string;
 
     await sql`
       UPDATE tasks SET
