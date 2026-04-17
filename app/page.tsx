@@ -15,7 +15,7 @@ interface Category {
 async function getTasks(searchParams: { status?: string; category_id?: string; priority?: string }) {
   const sql = getDb();
   const conditions: string[] = [];
-  const params: any[] = [];
+  const params: (string | number)[] = [];
   let paramIdx = 1;
 
   if (searchParams.status) {
@@ -41,7 +41,7 @@ async function getTasks(searchParams: { status?: string; category_id?: string; p
       t.created_at DESC
   `;
 
-  return sql.query(query, params) as Promise<any[]>;
+  return sql.query(query, params) as Promise<Record<string, unknown>[]>;
 }
 
 export default async function Home({

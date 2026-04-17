@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const priority = searchParams.get('priority');
 
   const conditions: string[] = [];
-  const params: any[] = [];
+  const params: (string | number)[] = [];
   let paramIdx = 1;
 
   if (status) { conditions.push(`t.status = $${paramIdx++}`); params.push(status); }
