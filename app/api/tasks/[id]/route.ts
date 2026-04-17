@@ -49,7 +49,8 @@ export async function PATCH(
       status      = ${status},
       priority    = ${priority},
       category_id = ${categoryId},
-      due_date    = ${dueDate}
+      due_date    = ${dueDate},
+      updated_at  = now()
     WHERE id = ${Number(id)}
     RETURNING *
   `;

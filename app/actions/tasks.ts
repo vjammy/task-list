@@ -48,7 +48,7 @@ export async function updateTaskStatus(id: number, status: string) {
     }
 
     const sql = getDb();
-    await sql`UPDATE tasks SET status = ${status} WHERE id = ${id}`;
+    await sql`UPDATE tasks SET status = ${status}, updated_at = now() WHERE id = ${id}`;
     revalidatePath('/');
     return { success: true };
   } catch (error) {
@@ -98,7 +98,8 @@ export async function updateTask(id: number, formData: FormData) {
         status      = ${status},
         priority    = ${priority},
         category_id = ${categoryId ? Number(categoryId) : null},
-        due_date    = ${dueDate || null}
+        due_date    = ${dueDate || null},
+        updated_at  = now()
       WHERE id = ${id}
     `;
     revalidatePath('/');
