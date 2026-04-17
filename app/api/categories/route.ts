@@ -11,9 +11,16 @@ export async function POST(request: NextRequest) {
   const sql = getDb();
   const body = await request.json();
 
-  const result = await sql`
-    INSERT INTO categories (name, color) VALUES (${body.name}, ${body.color ?? '#6B7280'})
-    RETURNING *
-  `;
-  return NextResponse.json(result[0], { status: 201 });
+  try {
+    const result = await sql`
+      INSERT INTO categories (name, color) VALUES (${body.name}, ${body.color ?? '#6B7280'})
+      RETURNING *
+    ` as Record<string, unknown>[];
+    return NextResponse.json(result[0], { status: 201 });
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === '23505') {
+      return NextResponse.json({ error: 'Category with this name already exists' }, { status: 409 });
+    }
+    return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
+  }
 }

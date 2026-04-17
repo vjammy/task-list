@@ -13,7 +13,13 @@ interface Task {
   created_at: string;
 }
 
-export function TaskList({ tasks }: { tasks: Task[] }) {
+interface Category {
+  id: number;
+  name: string;
+  color: string;
+}
+
+export function TaskList({ tasks, categories }: { tasks: Task[]; categories?: Category[] }) {
   if (tasks.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -26,7 +32,7 @@ export function TaskList({ tasks }: { tasks: Task[] }) {
   return (
     <div className="space-y-3">
       {tasks.map((task) => (
-        <TaskCard key={task.id} task={task} />
+        <TaskCard key={task.id} task={task} categories={categories} />
       ))}
     </div>
   );

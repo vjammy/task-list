@@ -36,6 +36,13 @@ export function FilterBar({ categories }: FilterBarProps) {
     <div className="bg-white rounded-lg shadow p-4 mb-6">
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm font-medium text-gray-700">Filters:</span>
+        <input
+          type="text"
+          value={searchParams.get('q') || ''}
+          onChange={(e) => updateFilter('q', e.target.value)}
+          placeholder="Search tasks..."
+          className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
         <select
           value={searchParams.get('status') || ''}
           onChange={(e) => updateFilter('status', e.target.value)}

@@ -1,7 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
-import { createTask } from '@/app/actions/tasks';
+import { useTaskActions } from './Toast';
 
 interface Category {
   id: number;
@@ -14,16 +13,10 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ categories }: TaskFormProps) {
-  const [isPending, startTransition] = useTransition();
-
-  function handleSubmit(formData: FormData) {
-    startTransition(() => {
-      createTask(formData);
-    });
-  }
+  const { isPending, handleCreateTask } = useTaskActions();
 
   return (
-    <form action={handleSubmit} className="bg-white rounded-lg shadow p-6 mb-6">
+    <form action={handleCreateTask} className="bg-white rounded-lg shadow p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4">Add New Task</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">

@@ -73,27 +73,20 @@ export async function updateTask(id: number, formData: FormData) {
   try {
     const sql = getDb();
 
-    // Fetch current values to avoid overwriting with null for missing fields
-    const current = await sql`SELECT * FROM tasks WHERE id = ${id}`;
+    const current = await sql`SELECT * FROM tasks WHERE id = ${id}` as Record<string, unknown>[];
     if (current.length === 0) {
       return { error: 'Task not found.' };
     }
+    const row = current[0] as Record<string, string | number | null>;
 
-    const rawTitle = formData.get('title');
-    const rawDescription = formData.get('description');
-    const rawPriority = formData.get('priority');
-    const rawStatus = formData.get('status');
-    const rawCategoryId = formData.get('category_id');
-    const rawDueDate = formData.get('due_date');
+    const title = (formData.get('title') as string) ?? String(row.title ?? '');
+    const description = (formData.get('description') as string) ?? String(row.description ?? '');
+    const priority = (formData.get('priority') as string) ?? String(row.priority ?? 'medium');
+    const status = (formData.get('status') as string) ?? String(row.status ?? 'pending');
+    const categoryId = (formData.get('category_id') as string) ?? (row.category_id != null ? String(row.category_id) : '');
+    const dueDate = (formData.get('due_date') as string) ?? (row.due_date != null ? String(row.due_date) : '');
 
-    const title = rawTitle !== null ? (rawTitle as string) : current[0].title;
-    const description = rawDescription !== null ? (rawDescription as string) : current[0].description;
-    const priority = rawPriority !== null ? (rawPriority as string) : current[0].priority;
-    const status = rawStatus !== null ? (rawStatus as string) : current[0].status;
-    const categoryId = rawCategoryId !== null ? (rawCategoryId as string) : String(current[0].category_id ?? '');
-    const dueDate = rawDueDate !== null ? (rawDueDate as string) : (current[0].due_date ?? '');
-
-    if (title !== null && !title.trim()) {
+    if (!title.trim()) {
       return { error: 'Title cannot be empty.' };
     }
     if (priority && !VALID_PRIORITIES.includes(priority)) {

@@ -11,11 +11,17 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status');
   const category_id = searchParams.get('category_id');
   const priority = searchParams.get('priority');
+  const q = searchParams.get('q');
 
   const conditions: string[] = [];
   const params: (string | number)[] = [];
   let paramIdx = 1;
 
+  if (q) {
+    conditions.push(`(t.title ILIKE $${paramIdx} OR t.description ILIKE $${paramIdx})`);
+    params.push(`%${q}%`);
+    paramIdx++;
+  }
   if (status) { conditions.push(`t.status = $${paramIdx++}`); params.push(status); }
   if (category_id) { conditions.push(`t.category_id = $${paramIdx++}`); params.push(Number(category_id)); }
   if (priority) { conditions.push(`t.priority = $${paramIdx++}`); params.push(priority); }
@@ -48,6 +54,6 @@ export async function POST(request: NextRequest) {
     VALUES (${body.title.trim()}, ${body.description ?? ''}, ${status},
             ${priority}, ${body.category_id ?? null}, ${body.due_date ?? null})
     RETURNING *
-  `;
+  ` as Record<string, unknown>[];
   return NextResponse.json(result[0], { status: 201 });
 }

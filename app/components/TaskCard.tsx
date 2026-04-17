@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useTransition } from 'react';
-import { updateTaskStatus, deleteTask } from '@/app/actions/tasks';
+import { updateTaskStatus, deleteTask, updateTask } from '@/app/actions/tasks';
 import { CategoryBadge } from './CategoryBadge';
+import { useToast } from './Toast';
 
 interface Task {
   id: number;
@@ -17,8 +19,15 @@ interface Task {
   created_at: string;
 }
 
-export function TaskCard({ task }: { task: Task }) {
+interface TaskCardProps {
+  task: Task;
+  categories?: { id: number; name: string; color: string }[];
+}
+
+export function TaskCard({ task, categories = [] }: TaskCardProps) {
   const [isPending, startTransition] = useTransition();
+  const [editing, setEditing] = useState(false);
+  const { toast } = useToast();
 
   const statusLabels: Record<string, string> = {
     pending: 'Pending',
@@ -45,6 +54,62 @@ export function TaskCard({ task }: { task: Task }) {
   };
 
   const isCompleted = task.status === 'completed';
+
+  function handleSave(formData: FormData) {
+    startTransition(async () => {
+      const result = await updateTask(task.id, formData);
+      if (result.error) toast(result.error, 'error');
+      else { toast('Task updated'); setEditing(false); }
+    });
+  }
+
+  if (editing) {
+    return (
+      <form action={handleSave} className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="md:col-span-2">
+            <input type="text" name="title" defaultValue={task.title} required
+              className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div className="md:col-span-2">
+            <textarea name="description" defaultValue={task.description} rows={2}
+              className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <select name="priority" defaultValue={task.priority}
+            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <select name="status" defaultValue={task.status}
+            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+          <select name="category_id" defaultValue={task.category_id ?? ''}
+            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">No Category</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+          <input type="date" name="due_date" defaultValue={task.due_date ? task.due_date.split('T')[0] : ''}
+            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div className="flex gap-2 mt-3">
+          <button type="submit" disabled={isPending}
+            className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50">
+            {isPending ? 'Saving...' : 'Save'}
+          </button>
+          <button type="button" onClick={() => setEditing(false)}
+            className="px-4 py-1.5 border border-gray-300 text-sm rounded-md hover:bg-gray-50">
+            Cancel
+          </button>
+        </div>
+      </form>
+    );
+  }
 
   return (
     <div className={`bg-white rounded-lg shadow p-4 border-l-4 ${isCompleted ? 'border-green-500 opacity-75' : task.priority === 'high' ? 'border-red-500' : task.priority === 'medium' ? 'border-yellow-500' : 'border-gray-300'}`}>
@@ -73,7 +138,21 @@ export function TaskCard({ task }: { task: Task }) {
         </div>
         <div className="flex gap-2 shrink-0">
           <button
-            onClick={() => startTransition(() => updateTaskStatus(task.id, nextStatus[task.status]))}
+            onClick={() => setEditing(true)}
+            disabled={isPending}
+            className="text-sm px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            title="Edit task"
+          >
+            ✎
+          </button>
+          <button
+            onClick={() => {
+              startTransition(async () => {
+                const result = await updateTaskStatus(task.id, nextStatus[task.status]);
+                if (result.error) toast(result.error, 'error');
+                else toast('Task updated');
+              });
+            }}
             disabled={isPending}
             className="text-sm px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 transition-colors"
             title={`Move to ${statusLabels[nextStatus[task.status]]}`}
@@ -81,7 +160,14 @@ export function TaskCard({ task }: { task: Task }) {
             {isCompleted ? '↩' : '✓'}
           </button>
           <button
-            onClick={() => startTransition(() => deleteTask(task.id))}
+            onClick={() => {
+              if (!confirm('Delete this task?')) return;
+              startTransition(async () => {
+                const result = await deleteTask(task.id);
+                if (result.error) toast(result.error, 'error');
+                else toast('Task deleted');
+              });
+            }}
             disabled={isPending}
             className="text-sm px-3 py-1 rounded-md border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
           >

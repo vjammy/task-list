@@ -11,7 +11,7 @@ export async function GET(
   const { id } = await params;
   const sql = getDb();
   const result = await sql`SELECT t.*, c.name AS category_name, c.color AS category_color
-    FROM tasks t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ${Number(id)}`;
+    FROM tasks t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ${Number(id)}` as Record<string, unknown>[];
   if (result.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(result[0]);
 }
@@ -32,7 +32,7 @@ export async function PATCH(
   }
 
   // Fetch current task to build update with explicit values
-  const current = await sql`SELECT * FROM tasks WHERE id = ${Number(id)}`;
+  const current = await sql`SELECT * FROM tasks WHERE id = ${Number(id)}` as Record<string, unknown>[];
   if (current.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const title = body.title !== undefined ? body.title : current[0].title;
@@ -53,7 +53,7 @@ export async function PATCH(
       updated_at  = now()
     WHERE id = ${Number(id)}
     RETURNING *
-  `;
+  ` as Record<string, unknown>[];
   return NextResponse.json(result[0]);
 }
 
@@ -63,7 +63,7 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const sql = getDb();
-  const result = await sql`DELETE FROM tasks WHERE id = ${Number(id)} RETURNING id`;
+  const result = await sql`DELETE FROM tasks WHERE id = ${Number(id)} RETURNING id` as Record<string, unknown>[];
   if (result.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ deleted: true });
 }
